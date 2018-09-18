@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Aug 17 21:15:24 2018
+
+@author: pamillakang
+"""
+
+#ADDS THE LOCAL AUTHORITY DISTRICTS AND CALCULATES THE OVERALL REPRESENTATION FOR THE WEBSITES THAT WERE DONE MANUALLY
+
+import openpyxl
+from openpyxl import Workbook
+
+#opens a spreadsheet of the websites that were looked at manually called 'Manual wards'
+#this spreadsheet must be in the same format as the spreadsheet made by the webscraping code 
+#so wards must be in column 1, councillors in columns 2,3,4 and the url must be in column 7
+wb=openpyxl.load_workbook('Manual Wards.xlsx')
+ws=wb.active
+
+#open the spreadsheet with the urls and local authority districts
+wb2 = openpyxl.load_workbook('url and lad.xlsx')
+ws2=wb2.active
+wb3=Workbook()
+ws3=wb3.active
+
+
+lads=[]
+partyarray=[]
+overall=[]
+
+#make a 2d array to keep all the councillor information in
+#first index of partyarray holds all the councillors in each ward
+#second index of partyarray is therefore a specific councillor in each ward
+for x in range(1,ws.max_row+1):
+    partyarray.append([])
+    #match them to their lad using the urls
+    for m in range(1,ws2.max_row+1):
+        if str(ws.cell(row=x,column=7).value)==str(ws2.cell(row=m,column=1).value):
+            lads.append(str(ws2.cell(row=m,column=2).value))
+    #add info to the partyarray
+    for y in range(2,5):
+        if ws.cell(row=x,column=y).value is not None:
+            partyarray[x-1].append(str(ws.cell(row=x,column=y).value))
+            
+    #calculate the overall repr
+    if sum('conservative'in s.lower() for s in partyarray[x-1])>=2:
+        overall.append('Conservative')
+    elif len(partyarray[x-1])==1 and sum('conservative'in s.lower() for s in partyarray[x-1])==1:
+        overall.append('Conservative')
+    elif sum('labour'in s.lower() for s in partyarray[x-1])>=2:
+        overall.append('Labour')
+    elif len(partyarray[x-1])==1 and sum('labour'in s.lower() for s in partyarray[x-1])==1:
+         overall.append('Labour')
+    elif sum('liberal democrat'in s.lower() for s in partyarray[x-1])>=2:
+        overall.append('Liberal Democrat')
+    elif len(partyarray[x-1])==1 and sum('liberal democrat'in s.lower() for s in partyarray[x-1])==1:
+         overall.append('Liberal Democrat')
+    elif sum('green'in s.lower() for s in partyarray[x-1])>=2:
+        overall.append('Green')
+    elif len(partyarray[x-1])==1 and sum('green'in s.lower() for s in partyarray[x-1])==1:
+        overall.append('Green')
+    elif sum('uk'in s.lower() for s in partyarray[x-1])>=2:
+        overall.append('UKIP')
+    elif len(partyarray[x-1])==1 and sum('uk'in s.lower() for s in partyarray[x-1])==1:
+        overall.append('UKIP')
+    elif len(partyarray[x-1])==2 and partyarray[x-1][0]!=partyarray[x-1][1]:
+        overall.append('NOC')
+    elif len(partyarray[x-1])==3 and partyarray[x-1][0]!=partyarray[x-1][1]and partyarray[x-1][0]!=partyarray[x-1][2]and partyarray[x-1][2]!=partyarray[x-1][1]:
+        overall.append('NOC')
+    else:
+        overall.append('Other')
+#print an error if any urls on the manual list of wards are wrong, as then the code won't work  
+if len(lads)!=ws.max_row:
+    print('Not all your urls on your manual list match the original url list')
+
+#write the info to a spreadsheet if all is good
+for x in range(1,ws.max_row+1):
+    ws3.cell(row=x,column=6).value=lads[x-1]
+    ws3.cell(row=x,column=1).value=ws.cell(row=x,column=1).value
+    ws3.cell(row=x,column=2).value=ws.cell(row=x,column=2).value
+    ws3.cell(row=x,column=3).value=ws.cell(row=x,column=3).value
+    ws3.cell(row=x,column=4).value=ws.cell(row=x,column=4).value
+    ws3.cell(row=x,column=5).value=overall[x-1]
+    ws3.cell(row=x,column=7).value=ws.cell(row=x,column=7).value
+wb3.save('Manual wards with repr and lad.xlsx')
+#            
+
+
